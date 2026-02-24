@@ -1,0 +1,65 @@
+name: Release
+
+# Trigger: push a version tag  →  git tag v1.0.0 && git push origin v1.0.0
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write   # needed to create the GitHub release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      # ── Build ──────────────────────────────────────────────────────────────
+
+      - name: Publish Linux x64
+        run: |
+          dotnet publish MCCompanion/MCCompanion.csproj \
+            -c Release -r linux-x64 --self-contained true \
+            -p:PublishSingleFile=true \
+            -o publish/linux-x64
+
+      - name: Publish Windows x64
+        run: |
+          dotnet publish MCCompanion/MCCompanion.csproj \
+            -c Release -r win-x64 --self-contained true \
+            -p:PublishSingleFile=true \
+            -o publish/win-x64
+
+      # ── Package ────────────────────────────────────────────────────────────
+
+      - name: Package archives
+        run: |
+          mkdir dist
+
+          # Linux: MCCompanion + README + menu template  →  .tar.gz
+          cp README.md mc_menu_template.txt publish/linux-x64/
+          tar -czf dist/MCCompanion-linux-x64.tar.gz \
+            -C publish/linux-x64 MCCompanion README.md mc_menu_template.txt
+
+          # Windows: MCCompanion.exe + README + menu template  →  .zip
+          cp README.md mc_menu_template.txt publish/win-x64/
+          (cd publish/win-x64 && zip -r ../../dist/MCCompanion-win-x64.zip \
+            MCCompanion.exe README.md mc_menu_template.txt)
+
+      # ── Release ────────────────────────────────────────────────────────────
+
+      - name: Create GitHub release
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "MCCompanion ${{ github.ref_name }}" \
+            --generate-notes \
+            dist/MCCompanion-linux-x64.tar.gz \
+            dist/MCCompanion-win-x64.zip
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -68,6 +68,15 @@ catch (Exception ex)
 
 static void ShowUsage()
 {
+    // Look for README.md next to the binary, then in the working directory.
+    string? readme = FindReadme();
+    if (readme != null)
+    {
+        Console.WriteLine(File.ReadAllText(readme));
+        return;
+    }
+
+    // Fallback: compact built-in reference (README.md not deployed alongside binary).
     Console.WriteLine("""
         MCCompanion – Midnight Commander companion  (Windows + Linux)
 
@@ -91,6 +100,16 @@ static void ShowUsage()
           folder-size <dir> [items...]  Interactive folder size analyser
 
         Integrate via Midnight Commander F2 user menu.
-        See mc_menu_template.txt and README.md for details.
+        Place README.md alongside the binary for full documentation.
         """);
+}
+
+static string? FindReadme()
+{
+    foreach (string dir in new[] { AppContext.BaseDirectory, Directory.GetCurrentDirectory() })
+    {
+        string path = Path.Combine(dir, "README.md");
+        if (File.Exists(path)) return path;
+    }
+    return null;
 }

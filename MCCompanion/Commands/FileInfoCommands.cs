@@ -271,76 +271,101 @@ internal class TouchCommand : ICommand
 
 internal class TouchDialog : Dialog
 {
-    private readonly string _path;
-    private readonly TextField _tfDate;
-    private readonly TextField _tfTime;
-    private readonly CheckBox  _chkM;
-    private readonly CheckBox  _chkC;
-    private readonly CheckBox  _chkA;
+    // Column X positions — date field, time field, Now button
+    private const int DateX = 12;
+    private const int TimeX = 26;
+    private const int NowX  = 38;
 
-    public TouchDialog(string path) : base("Set Timestamp", 52, 15)
+    private readonly string    _path;
+    private readonly TextField _tfModDate, _tfModTime;
+    private readonly TextField _tfCrtDate, _tfCrtTime;
+    private readonly TextField _tfAccDate, _tfAccTime;
+
+    public TouchDialog(string path) : base("Set Timestamps", 52, 12)
     {
         _path = path;
         ColorScheme = Tui.McColors;
-        string now  = DateTime.Now.ToString("yyyy-MM-dd");
-        string nowt = DateTime.Now.ToString("HH:mm:ss");
+
+        bool isDir         = Directory.Exists(path);
+        bool canSetCreated = OperatingSystem.IsWindows();
+        var  info          = isDir ? (FileSystemInfo)new DirectoryInfo(path) : new FileInfo(path);
 
         Add(new Label(Path.GetFileName(path)) { X = 1, Y = 1 });
 
-        Add(new Label("Date (yyyy-MM-dd): ") { X = 1, Y = 3 });
-        _tfDate = new TextField(now)  { X = 20, Y = 3, Width = 12 };
+        // Format hint row
+        Add(new Label("(yyyy-MM-dd)") { X = DateX, Y = 2 });
+        Add(new Label("(HH:mm:ss)")   { X = TimeX, Y = 2 });
 
-        Add(new Label("Time (HH:mm:ss):  ") { X = 1, Y = 4 });
-        _tfTime = new TextField(nowt) { X = 20, Y = 4, Width = 10 };
+        // Modified row
+        Add(new Label("Modified: ")  { X = 1,    Y = 4 });
+        _tfModDate = new TextField(info.LastWriteTime.ToString("yyyy-MM-dd"))  { X = DateX, Y = 4, Width = 12 };
+        _tfModTime = new TextField(info.LastWriteTime.ToString("HH:mm:ss"))    { X = TimeX, Y = 4, Width = 10 };
+        var btnNowMod = MakeNowBtn(NowX, 4, _tfModDate, _tfModTime);
 
-        // Terminal.Gui v1: CheckBox(string text, bool isChecked)
-        _chkM = new CheckBox("Last _modified", true)  { X = 1, Y = 6 };
-        _chkC = new CheckBox("_Created",       false) { X = 1, Y = 7,
-            // Linux filesystems do not expose birth time via POSIX; setting it is a no-op.
-            Enabled = OperatingSystem.IsWindows() };
-        _chkA = new CheckBox("Last _accessed", false) { X = 1, Y = 8 };
-        if (!OperatingSystem.IsWindows())
-            Add(new Label("(not supported on Linux)") { X = 14, Y = 7 });
+        // Created row (birth time is not writable on Linux)
+        Add(new Label("Created:  ")  { X = 1,    Y = 5 });
+        _tfCrtDate = new TextField(info.CreationTime.ToString("yyyy-MM-dd"))   { X = DateX, Y = 5, Width = 12, Enabled = canSetCreated };
+        _tfCrtTime = new TextField(info.CreationTime.ToString("HH:mm:ss"))     { X = TimeX, Y = 5, Width = 10, Enabled = canSetCreated };
+        var btnNowCrt = MakeNowBtn(NowX, 5, _tfCrtDate, _tfCrtTime);
+        btnNowCrt.Enabled = canSetCreated;
 
-        var btnNow = new Button("_Now");
-        btnNow.Clicked += () =>
-        {
-            _tfDate.Text = DateTime.Now.ToString("yyyy-MM-dd");
-            _tfTime.Text = DateTime.Now.ToString("HH:mm:ss");
-        };
-        var btnApply  = new Button("_Apply") { IsDefault = true };
-        btnApply.Clicked += Apply;
+        // Accessed row
+        Add(new Label("Accessed: ")  { X = 1,    Y = 6 });
+        _tfAccDate = new TextField(info.LastAccessTime.ToString("yyyy-MM-dd")) { X = DateX, Y = 6, Width = 12 };
+        _tfAccTime = new TextField(info.LastAccessTime.ToString("HH:mm:ss"))   { X = TimeX, Y = 6, Width = 10 };
+        var btnNowAcc = MakeNowBtn(NowX, 6, _tfAccDate, _tfAccTime);
+
+        var btnSave   = new Button("_Save") { IsDefault = true };
+        btnSave.Clicked += Save;
         var btnCancel = new Button("_Cancel");
         btnCancel.Clicked += () => Application.RequestStop();
         AddButton(btnCancel);
-        AddButton(btnNow);
-        AddButton(btnApply);
-        Add(_tfDate, _tfTime, _chkM, _chkC, _chkA);
+        AddButton(btnSave);
+
+        Add(_tfModDate, _tfModTime, btnNowMod,
+            _tfCrtDate, _tfCrtTime, btnNowCrt,
+            _tfAccDate, _tfAccTime, btnNowAcc);
     }
 
-    private void Apply()
+    private static Button MakeNowBtn(int x, int y, TextField date, TextField time)
     {
-        string ds = _tfDate.Text?.ToString() ?? string.Empty;
-        string ts = _tfTime.Text?.ToString() ?? string.Empty;
-        if (!DateTime.TryParse($"{ds} {ts}", out DateTime dt))
+        var b = new Button("Now") { X = x, Y = y };
+        b.Clicked += () =>
+        {
+            date.Text = DateTime.Now.ToString("yyyy-MM-dd");
+            time.Text = DateTime.Now.ToString("HH:mm:ss");
+        };
+        return b;
+    }
+
+    private void Save()
+    {
+        if (!TryParseRow(_tfModDate, _tfModTime, out var dtMod)
+         || !TryParseRow(_tfAccDate, _tfAccTime, out var dtAcc))
         {
             Tui.Message("Error", "Invalid date/time.\nExpected yyyy-MM-dd and HH:mm:ss.");
             return;
         }
+        bool isDir = Directory.Exists(_path);
         try
         {
-            bool isDir = Directory.Exists(_path);
-            if (_chkM.Checked)
-                if (isDir) Directory.SetLastWriteTime(_path, dt);
-                else File.SetLastWriteTime(_path, dt);
-            if (_chkC.Checked)
-                if (isDir) Directory.SetCreationTime(_path, dt);
-                else File.SetCreationTime(_path, dt);
-            if (_chkA.Checked)
-                if (isDir) Directory.SetLastAccessTime(_path, dt);
-                else File.SetLastAccessTime(_path, dt);
+            if (isDir) { Directory.SetLastWriteTime(_path, dtMod);  Directory.SetLastAccessTime(_path, dtAcc); }
+            else       { File.SetLastWriteTime(_path, dtMod);        File.SetLastAccessTime(_path, dtAcc); }
+
+            if (OperatingSystem.IsWindows() && TryParseRow(_tfCrtDate, _tfCrtTime, out var dtCrt))
+            {
+                if (isDir) Directory.SetCreationTime(_path, dtCrt);
+                else       File.SetCreationTime(_path, dtCrt);
+            }
             Application.RequestStop();
         }
         catch (Exception ex) { Tui.Message("Error", ex.Message); }
+    }
+
+    private static bool TryParseRow(TextField date, TextField time, out DateTime result)
+    {
+        string ds = date.Text?.ToString() ?? string.Empty;
+        string ts = time.Text?.ToString() ?? string.Empty;
+        return DateTime.TryParse($"{ds} {ts}", out result);
     }
 }
