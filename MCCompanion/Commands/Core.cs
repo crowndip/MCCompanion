@@ -161,19 +161,41 @@ internal static class ProcessHelper
         catch { return false; }
     }
 
-    /// <summary>Windows-style argument quoting: wrap in double-quotes if needed.</summary>
+    /// <summary>
+    /// Windows-style argument quoting per the CommandLineToArgvW rules:
+    /// - Backslashes before a double-quote must be doubled, then the quote escaped with \
+    /// - Trailing backslashes before the closing quote must be doubled
+    /// - Args with no spaces, tabs, or quotes are returned unquoted
+    /// </summary>
     private static string QuoteWin(string arg)
     {
         if (arg.Length == 0) return "\"\"";
-        // No quoting needed if arg has no spaces, tabs, or double-quotes
         if (!arg.Any(c => c is ' ' or '\t' or '"')) return arg;
-        // Escape backslashes that precede a double-quote, then wrap
+
         var sb = new System.Text.StringBuilder("\"");
-        for (int i = 0; i < arg.Length; i++)
+        int backslashes = 0;
+        foreach (char c in arg)
         {
-            if (arg[i] == '"') sb.Append('\\');
-            sb.Append(arg[i]);
+            if (c == '\\')
+            {
+                backslashes++;
+            }
+            else if (c == '"')
+            {
+                // 2n+1 backslashes followed by an escaped quote
+                sb.Append('\\', backslashes * 2 + 1);
+                sb.Append('"');
+                backslashes = 0;
+            }
+            else
+            {
+                sb.Append('\\', backslashes);
+                sb.Append(c);
+                backslashes = 0;
+            }
         }
+        // Trailing backslashes precede the closing quote — must be doubled
+        sb.Append('\\', backslashes * 2);
         sb.Append('"');
         return sb.ToString();
     }

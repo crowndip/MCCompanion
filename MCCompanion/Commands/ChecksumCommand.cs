@@ -77,7 +77,7 @@ internal class ChecksumDialog : Dialog
     private static Button MakeCopyBtn(string label, int x, Action action)
     {
         var b = new Button(label) { X = x, Y = 8 };
-        b.Clicked += () => action();
+        b.Clicked += action;
         return b;
     }
 

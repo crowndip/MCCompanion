@@ -35,7 +35,7 @@ internal class ContextCommand : ICommand
                 ProcessHelper.TryLaunchArgs("nautilus", parent, "--select", path) ||
                 ProcessHelper.TryLaunchArgs("dolphin",  parent, "--select", path) ||
                 ProcessHelper.TryLaunchArgs("nemo",     parent, path)             ||
-                ProcessHelper.TryLaunch(("xdg-open", $"\"{parent}\""));
+                ProcessHelper.TryLaunchArgs("xdg-open", parent, parent);
 
             if (!ok)
                 Console.Error.WriteLine($"Could not open file manager for: {path}");

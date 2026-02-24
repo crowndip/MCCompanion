@@ -48,8 +48,11 @@ internal class PropertiesDialog : Dialog
     {
         try
         {
-            var psi = new System.Diagnostics.ProcessStartInfo("stat", $"-c \"%A  %U:%G\" \"{path}\"")
+            var psi = new System.Diagnostics.ProcessStartInfo("stat")
             { RedirectStandardOutput = true, UseShellExecute = false };
+            psi.ArgumentList.Add("-c");
+            psi.ArgumentList.Add("%A  %U:%G");
+            psi.ArgumentList.Add(path);
             using var p = System.Diagnostics.Process.Start(psi);
             string? line = p?.StandardOutput.ReadLine()?.Trim();
             p?.WaitForExit(2000);
