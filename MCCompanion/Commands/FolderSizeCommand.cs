@@ -313,7 +313,8 @@ internal sealed class FolderSizeDialog : Dialog
         SortMode.Date => parent.Children.Where(c => !c.IsFile).OrderByDescending(c => c.LastWriteTime)
                          .Concat(parent.Children.Where(c => c.IsFile).OrderByDescending(c => c.LastWriteTime)),
 
-        _ =>            parent.Children.Where(c => !c.IsFile).OrderBy(c => c.Name)           // Size (default)
+        _ =>            parent.Children.Where(c => !c.IsFile)                                  // Size (default)
+                             .OrderByDescending(c => c.SizeBytes).ThenBy(c => c.Name)       //   dirs: large first; ties → alpha; pending/calculating (negative) last
                          .Concat(parent.Children.Where(c => c.IsFile).OrderByDescending(c => c.SizeBytes)),
     };
 
