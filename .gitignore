@@ -1,0 +1,25 @@
+# Build outputs
+bin/
+obj/
+out/
+
+# Rider / VS / VSCode
+.idea/
+.vs/
+.vscode/
+*.user
+*.suo
+*.sln.docstates
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+nuget.config.local
+
+# .NET publish output
+publish/
+
+# OS
+.DS_Store
+Thumbs.db

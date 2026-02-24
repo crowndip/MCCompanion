@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- net8.0 (not net8.0-windows) = compiles on Linux AND Windows -->
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>MCCompanion</AssemblyName>
+    <RootNamespace>MCCompanion</RootNamespace>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <!-- Platform analyser warnings (CA1416) are emitted but don't block build -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Product>MCCompanion</Product>
+    <Description>Cross-platform Midnight Commander companion</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Terminal.Gui v1.19 – stable, MIT, Windows + Linux + macOS -->
+    <PackageReference Include="Terminal.Gui" Version="1.19.0" />
+  </ItemGroup>
+
+  <!--
+    Platform/Windows/ files contain P/Invoke declarations for shell32/user32.
+    On Linux these DLLs don't exist so we exclude the files entirely.
+    Result: the Linux compiler never sees IContextMenu, ShellExecuteEx, etc.
+  -->
+  <ItemGroup Condition="!$([MSBuild]::IsOSPlatform('Windows'))">
+    <Compile Remove="Platform\Windows\*.cs" />
+  </ItemGroup>
+
+</Project>

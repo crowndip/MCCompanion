@@ -1,0 +1,92 @@
+# MCCompanion – Midnight Commander user menu
+# Works on BOTH Windows (mcwin32) and Linux (standard MC).
+#
+# WINDOWS location:  C:\Users\<you>\AppData\Roaming\Midnight Commander\menu
+# LINUX location:    ~/.config/mc/menu
+#
+# Edit via: F9 → Command → Edit Menu File
+#
+# ─── Path to MCCompanion ───────────────────────────────────────────────────
+# Windows: C:\\TOOLS\\mc\\MCCompanion.exe
+# Linux:   ~/bin/MCCompanion   (or wherever you installed it)
+#
+# Adjust the path in every entry below to match your installation.
+#
+# ─── MC macro reference ────────────────────────────────────────────────────
+# %d  = current panel directory    (NO trailing separator in mcwin32)
+# %f  = filename under cursor
+# %t  = tagged filenames, space-separated (NAMES only, no dir prefix)
+# %s  = tagged if any, else %f
+# %D  = opposite panel directory
+# %F  = opposite panel filename
+# + t t   condition: only show when files are tagged
+# ──────────────────────────────────────────────────────────────────────────
+
+# ════════════════════════════════════════════════════════════
+#  CLIPBOARD
+# ════════════════════════════════════════════════════════════
+
+D   Copy directory path to clipboard
+    MCCompanion clip-dir "%d"
+
+P   Copy full path of current file
+    MCCompanion clip-path "%d" "%f"
+
+N   Copy filename only (no directory)
+    MCCompanion clip-name "%f"
+
++ t t
+Q   Copy full paths of tagged files
+    MCCompanion clip-path "%d" %t
+
++ t t
+L   Copy filenames of tagged files
+    MCCompanion clip-name %t
+
+# ════════════════════════════════════════════════════════════
+#  SHELL INTEGRATION
+# ════════════════════════════════════════════════════════════
+
+W   Windows context menu / Reveal in file manager
+    MCCompanion context "%d/%f"
+
+O   Open With…
+    MCCompanion open-with "%d/%f"
+
+I   File/Folder Properties
+    MCCompanion properties "%d/%f"
+
+# ════════════════════════════════════════════════════════════
+#  FILE OPERATIONS
+# ════════════════════════════════════════════════════════════
+
+A   File attributes / permissions
+    MCCompanion attributes "%d/%f"
+
+T   Set file timestamp (touch)
+    MCCompanion touch "%d/%f"
+
+H   Checksums  (MD5 / SHA-1 / SHA-256)
+    MCCompanion checksum "%d/%f"
+
+S   Folder size (recursive, quick)
+    MCCompanion dir-size "%d"
+
+F   Folder size analysis  (tree view, navigate, delete big items)
+    MCCompanion folder-size "%d" %t
+
+R   Batch rename (current folder)
+    MCCompanion rename "%d"
+
+# ════════════════════════════════════════════════════════════
+#  UTILITIES
+# ════════════════════════════════════════════════════════════
+
+E   Open terminal here
+    MCCompanion terminal "%d"
+
+C   Compare current file with opposite panel file  (external tool)
+    MCCompanion compare "%d/%f" "%D/%F"
+
+V   Diff current file with opposite panel file  (inline TUI viewer)
+    MCCompanion diff-view "%d/%f" "%D/%F"
