@@ -13,8 +13,8 @@
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <!-- Platform analyser warnings (CA1416) are emitted but don't block build -->
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <FileVersion>1.0.1.0</FileVersion>
     <Product>MCCompanion</Product>
     <Description>Cross-platform Midnight Commander companion</Description>
   </PropertyGroup>

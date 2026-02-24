@@ -138,9 +138,11 @@ internal class LinuxPermissionsDialog : Dialog
     {
         try
         {
-            var psi = new System.Diagnostics.ProcessStartInfo("stat",
-                $"-c %a \"{path}\"")
+            var psi = new System.Diagnostics.ProcessStartInfo("stat")
             { RedirectStandardOutput = true, UseShellExecute = false };
+            psi.ArgumentList.Add("-c");
+            psi.ArgumentList.Add("%a");
+            psi.ArgumentList.Add(path);
             using var p = System.Diagnostics.Process.Start(psi);
             string? line = p?.StandardOutput.ReadLine()?.Trim();
             p?.WaitForExit(2000);
@@ -158,9 +160,10 @@ internal class LinuxPermissionsDialog : Dialog
     private static void Chmod(string path, uint mode)
     {
         string octal = Convert.ToString(mode, 8).PadLeft(4, '0');
-        var psi = new System.Diagnostics.ProcessStartInfo("chmod",
-            $"{octal} \"{path}\"")
+        var psi = new System.Diagnostics.ProcessStartInfo("chmod")
         { UseShellExecute = false };
+        psi.ArgumentList.Add(octal);
+        psi.ArgumentList.Add(path);
         using var p = System.Diagnostics.Process.Start(psi);
         p?.WaitForExit(3000);
     }
